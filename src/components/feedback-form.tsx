@@ -62,7 +62,7 @@ export default function FeedbackForm({ userInfo }: FeedbackFormProps) {
           <input type="hidden" name="nom" value={userInfo.nom} />
           <input type="hidden" name="email" value={userInfo.email} />
           <input type="hidden" name="timestamp" value={new Date().toISOString()} />
-          <input type="hidden" name="note_satisfaction" value={form.watch('rating')} />
+          <input type="hidden" name="note_satisfaction" value={form.watch('rating') || 0} />
 
           <FormField
             control={form.control}
@@ -85,7 +85,7 @@ export default function FeedbackForm({ userInfo }: FeedbackFormProps) {
               <FormItem>
                 <FormLabel>Commentaires, suggestions, points à améliorer</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Votre avis ici..." {...field} />
+                  <Textarea placeholder="Votre avis ici..." {...field} name="commentaires" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

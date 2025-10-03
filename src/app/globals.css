@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix pour le curseur invisible */
+* {
+  cursor: auto !important;
+}
+
+input, textarea, select, button {
+  cursor: pointer !important;
+}
+
+input[type="text"], input[type="email"], input[type="number"], textarea {
+  cursor: text !important;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
