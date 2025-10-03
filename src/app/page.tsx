@@ -6,6 +6,7 @@ import UserInfoForm from '@/components/user-info-form';
 import AudioPlayer from '@/components/audio-player';
 import FeedbackForm from '@/components/feedback-form';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export type UserInfo = {
   nom: string;
@@ -13,9 +14,12 @@ export type UserInfo = {
   email: string;
 };
 
+import { COURSES, type Course } from '@/lib/courses';
+
 export default function Home() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<string>('TC4'); // Par défaut TC4
 
   const handleUserInfoSubmit = (data: UserInfo) => {
     setUserInfo(data);
@@ -23,6 +27,11 @@ export default function Home() {
 
   const handleThresholdReached = () => {
     setShowFeedback(true);
+  };
+
+  const handleCourseChange = (courseId: string) => {
+    setSelectedCourse(courseId);
+    setShowFeedback(false); // Reset feedback when changing course
   };
 
   return (
@@ -60,7 +69,32 @@ export default function Home() {
                   transition={{ duration: 0.3 }}
                   className="space-y-8"
                 >
-                  <AudioPlayer onThresholdReached={handleThresholdReached} />
+                  {/* Onglets de sélection de cours */}
+                  <Tabs value={selectedCourse} onValueChange={handleCourseChange} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="TC3" className="text-sm font-medium">
+                        TC3 - EUROCODE
+                      </TabsTrigger>
+                      <TabsTrigger value="TC4" className="text-sm font-medium">
+                        TC4 - Poteaux Béton
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="TC3" className="mt-6">
+                      <AudioPlayer
+                        course={COURSES.TC3}
+                        onThresholdReached={handleThresholdReached}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="TC4" className="mt-6">
+                      <AudioPlayer
+                        course={COURSES.TC4}
+                        onThresholdReached={handleThresholdReached}
+                      />
+                    </TabsContent>
+                  </Tabs>
+
                   <AnimatePresence>
                     {showFeedback && (
                       <motion.div
@@ -68,7 +102,7 @@ export default function Home() {
                         animate={{ opacity: 1, height: 'auto' }}
                         transition={{ duration: 0.5, ease: "easeInOut" }}
                       >
-                        <FeedbackForm userInfo={userInfo} />
+                        <FeedbackForm userInfo={userInfo} selectedCourse={COURSES[selectedCourse]} />
                       </motion.div>
                     )}
                   </AnimatePresence>

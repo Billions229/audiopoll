@@ -1,19 +1,20 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Gauge } from 'lucide-react';
+import { Play, Pause, RotateCcw, Gauge, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Course } from '@/lib/courses';
 
-const AUDIO_URL = 'https://res.cloudinary.com/dysfocdyw/video/upload/v1759435118/Poteaux_en_B%C3%A9ton_Arm%C3%A9___D%C3%A9cryptage_Ultime_de_l_Eurocode_2_et_du_jcfgcs.mp4';
-const FEEDBACK_THRESHOLD = 0.95;
+const FEEDBACK_THRESHOLD = 0.25; // Changé de 0.95 à 0.25 (25%)
 
 type AudioPlayerProps = {
+  course: Course;
   onThresholdReached: () => void;
 };
 
-export default function AudioPlayer({ onThresholdReached }: AudioPlayerProps) {
+export default function AudioPlayer({ course, onThresholdReached }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -96,20 +97,60 @@ export default function AudioPlayer({ onThresholdReached }: AudioPlayerProps) {
       setIsPlaying(true);
     }
   };
-  
+
+  const skipTime = (seconds: number) => {
+    if (audioRef.current) {
+      const newTime = Math.max(0, Math.min(audioRef.current.currentTime + seconds, audioRef.current.duration));
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+      setProgress((newTime / audioRef.current.duration) * 100);
+    }
+  };
+
+  const handleProgressClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (audioRef.current && duration > 0) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const percentage = clickX / rect.width;
+      const newTime = percentage * duration;
+
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+      setProgress(percentage * 100);
+    }
+  };
+
   const formatTime = (timeInSeconds: number) => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
+  const getRequiredListeningTime = () => {
+    const requiredSeconds = Math.floor(duration * FEEDBACK_THRESHOLD);
+    const requiredMinutes = Math.floor(requiredSeconds / 60);
+    const totalMinutes = Math.floor(duration / 60);
+
+    return {
+      required: requiredMinutes,
+      total: totalMinutes,
+      requiredFormatted: formatTime(requiredSeconds),
+      totalFormatted: formatTime(duration)
+    };
+  };
+
   return (
     <div className="space-y-4" onContextMenu={(e) => e.preventDefault()}>
       <div className="text-center">
-        <h3 className="font-headline text-xl font-semibold">Cours: Poteaux en Béton Armé</h3>
-        <p className="text-sm text-muted-foreground">Eurocode 2 et Applications</p>
+        <h3 className="font-headline text-xl font-semibold">{course.title}</h3>
+        {duration > 0 && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Écoutez <strong>{getRequiredListeningTime().requiredFormatted}</strong> sur{' '}
+            <strong>{getRequiredListeningTime().totalFormatted}</strong> pour donner votre avis
+          </p>
+        )}
       </div>
-      <audio ref={audioRef} src={AUDIO_URL} controls={false} controlsList="nodownload" preload="metadata" />
+      <audio ref={audioRef} src={course.audioUrl} controls={false} controlsList="nodownload" preload="metadata" />
 
       {/* Contrôles de vitesse */}
       <div className="flex items-center justify-center gap-4 mb-4">
@@ -142,16 +183,51 @@ export default function AudioPlayer({ onThresholdReached }: AudioPlayerProps) {
         )}
       </div>
 
+      {/* Contrôles de navigation temporelle */}
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <Button
+          onClick={() => skipTime(-10)}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1 text-xs"
+        >
+          <SkipBack className="h-3 w-3" />
+          -10s
+        </Button>
+        <Button
+          onClick={() => skipTime(10)}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1 text-xs"
+        >
+          +10s
+          <SkipForward className="h-3 w-3" />
+        </Button>
+      </div>
+
       <div className="flex items-center gap-4">
         <Button onClick={togglePlayPause} variant="outline" size="icon" className="flex-shrink-0 bg-primary/10 hover:bg-primary/20">
           {isPlaying ? <Pause className="h-5 w-5 text-primary" /> : <Play className="h-5 w-5 text-primary" />}
         </Button>
         <div className="w-full">
-            <Progress value={progress} className="h-2" />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
-            </div>
+          {/* Barre de progression interactive */}
+          <div
+            className="relative w-full h-2 bg-secondary rounded-full cursor-pointer group"
+            onClick={handleProgressClick}
+          >
+            <div
+              className="absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-150"
+              style={{ width: `${progress}%` }}
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 cursor-grab active:cursor-grabbing"
+              style={{ left: `calc(${progress}% - 8px)` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
         </div>
       </div>
     </div>

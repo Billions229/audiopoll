@@ -88,7 +88,7 @@ export default function UserInfoForm({ onSubmit }: UserInfoFormProps) {
               {isSubmitting ? 'Chargement...' : (
                 <>
                   <span className="block sm:inline">Accéder au cours</span>
-                  <span className="block sm:inline sm:ml-1">- Poteaux en Béton Armé</span>
+          
                 </>
               )}
             </span>

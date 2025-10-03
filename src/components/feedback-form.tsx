@@ -1,6 +1,7 @@
 'use client';
 
 import type { UserInfo } from '@/app/page';
+import type { Course } from '@/lib/courses';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,9 +25,10 @@ const formSchema = z.object({
 
 type FeedbackFormProps = {
   userInfo: UserInfo;
+  selectedCourse: Course;
 };
 
-export default function FeedbackForm({ userInfo }: FeedbackFormProps) {
+export default function FeedbackForm({ userInfo, selectedCourse }: FeedbackFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -53,15 +55,17 @@ export default function FeedbackForm({ userInfo }: FeedbackFormProps) {
         <p className="text-muted-foreground">Aidez-nous à améliorer nos prochains cours.</p>
       </div>
       <Form {...form}>
-        <form action="https://formsubmit.co/techares0@gmail.com" method="POST" className="space-y-8">
+        <form action="https://formsubmit.co/saibouhalil01@gmail.com" method="POST" className="space-y-8">
           {/* FormSubmit and User Info Hidden Fields */}
           <input type="hidden" name="_next" value={redirectUrl} />
-          <input type="hidden" name="_subject" value={`Nouveau feedback de ${userInfo.prenom} ${userInfo.nom}`} />
+          <input type="hidden" name="_subject" value={`Nouveau feedback de ${userInfo.prenom} ${userInfo.nom} - ${selectedCourse.title}`} />
           <input type="hidden" name="_captcha" value="false" />
           <input type="hidden" name="prénom" value={userInfo.prenom} />
           <input type="hidden" name="nom" value={userInfo.nom} />
           <input type="hidden" name="email" value={userInfo.email} />
           <input type="hidden" name="timestamp" value={new Date().toISOString()} />
+          <input type="hidden" name="cours_selectionne" value={selectedCourse.id} />
+          <input type="hidden" name="titre_cours" value={selectedCourse.title} />
           <input type="hidden" name="note_satisfaction" value={form.watch('rating') || 0} />
 
           <FormField
