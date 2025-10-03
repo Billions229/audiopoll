@@ -79,8 +79,19 @@ export default function UserInfoForm({ onSubmit }: UserInfoFormProps) {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isSubmitting}>
-            {isSubmitting ? 'Chargement...' : 'Accéder au cours - Poteaux en Béton Armé'}
+          <Button
+            type="submit"
+            className="w-full bg-accent hover:bg-accent/90 text-sm sm:text-base py-3 sm:py-4 px-4 sm:px-6 min-h-[48px] sm:min-h-[52px]"
+            disabled={isSubmitting}
+          >
+            <span className="text-center leading-tight">
+              {isSubmitting ? 'Chargement...' : (
+                <>
+                  <span className="block sm:inline">Accéder au cours</span>
+                  <span className="block sm:inline sm:ml-1">- Poteaux en Béton Armé</span>
+                </>
+              )}
+            </span>
           </Button>
         </form>
       </Form>

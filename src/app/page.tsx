@@ -29,7 +29,14 @@ export default function Home() {
     <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-8">
       <div className="w-full max-w-2xl">
         <header className="mb-8 text-center">
-          <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl">AudioPoll</h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <img
+              src="/icon.png"
+              alt="AudioPoll Icon"
+              className="w-12 h-12 md:w-16 md:h-16 object-contain"
+            />
+            <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl">AudioPoll</h1>
+          </div>
           <p className="mt-2 text-muted-foreground">Testez nos résumés de cours audio pour le génie civil</p>
         </header>
         <Card className="w-full overflow-hidden shadow-2xl ring-1 ring-black/5">
