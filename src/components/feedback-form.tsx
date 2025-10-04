@@ -55,7 +55,7 @@ export default function FeedbackForm({ userInfo, selectedCourse }: FeedbackFormP
         <p className="text-muted-foreground">Aidez-nous à améliorer nos prochains cours.</p>
       </div>
       <Form {...form}>
-        <form action="https://formsubmit.co/saibouhalil01@gmail.com" method="POST" className="space-y-8">
+        <form action="https://formsubmit.co/contact@buildlab.fr" method="POST" className="space-y-8">
           {/* FormSubmit and User Info Hidden Fields */}
           <input type="hidden" name="_next" value={redirectUrl} />
           <input type="hidden" name="_subject" value={`Nouveau feedback de ${userInfo.prenom} ${userInfo.nom} - ${selectedCourse.title}`} />
