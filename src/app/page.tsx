@@ -71,14 +71,14 @@ export default function Home() {
                 >
                   {/* Onglets de sélection de cours */}
                   <Tabs value={selectedCourse} onValueChange={handleCourseChange} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="TC3" className="text-sm font-medium">
+                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 h-auto p-1">
+                      <TabsTrigger value="TC3" className="text-xs sm:text-sm font-medium py-2 px-2 sm:px-3">
                         TC3 - EUROCODE
                       </TabsTrigger>
-                      <TabsTrigger value="TC4" className="text-sm font-medium">
+                      <TabsTrigger value="TC4" className="text-xs sm:text-sm font-medium py-2 px-2 sm:px-3">
                         TC4 - Poteaux Béton
                       </TabsTrigger>
-                      <TabsTrigger value="DROIT" className="text-sm font-medium">
+                      <TabsTrigger value="DROIT" className="text-xs sm:text-sm font-medium py-2 px-2 sm:px-3">
                         Droit des Affaires
                       </TabsTrigger>
                     </TabsList>
