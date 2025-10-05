@@ -1,6 +1,6 @@
 # AudioPoll
 
-Une plateforme web minimaliste de sondage pour tester l'intérêt des étudiants en génie civil pour des cours audio résumés.
+Une plateforme web minimaliste de sondage pour tester l'intérêt des étudiants  pour des cours audio résumés.
 
 ## 🎯 Objectif
 

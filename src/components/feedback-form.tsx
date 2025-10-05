@@ -142,7 +142,7 @@ export default function FeedbackForm({ userInfo, selectedCourse }: FeedbackFormP
                 <FormItem>
                   <FormLabel>Si oui ou peut-être, quel montant (en €) vous semblerait acceptable par cours ?</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="ex: 5" {...field} name="montant_acceptable" />
+                    <Input type="number" placeholder="ex: 4" {...field} name="montant_acceptable" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,7 +151,7 @@ export default function FeedbackForm({ userInfo, selectedCourse }: FeedbackFormP
           )}
 
           <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isSubmitting}>
-            {isSubmitting ? 'Envoi en cours...' : 'Envoyer mon avis'}
+            {isSubmitting ? 'Envoi en cours....' : 'Envoyer mon avis'}
           </Button>
         </form>
       </Form>
