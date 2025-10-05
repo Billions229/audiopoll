@@ -46,7 +46,7 @@ export default function Home() {
             />
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl">AudioPoll</h1>
           </div>
-          <p className="mt-2 text-muted-foreground">Testez nos résumés de cours audio pour le génie civil</p>
+          <p className="mt-2 text-muted-foreground">Découvrez une nouvelle façon de réviser vos cours à l'approche des devoirs : testez et donnez-nous vos retours</p>
         </header>
         <Card className="w-full overflow-hidden shadow-2xl ring-1 ring-black/5">
           <CardContent className="p-6 sm:p-8">
@@ -71,12 +71,15 @@ export default function Home() {
                 >
                   {/* Onglets de sélection de cours */}
                   <Tabs value={selectedCourse} onValueChange={handleCourseChange} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="TC3" className="text-sm font-medium">
                         TC3 - EUROCODE
                       </TabsTrigger>
                       <TabsTrigger value="TC4" className="text-sm font-medium">
                         TC4 - Poteaux Béton
+                      </TabsTrigger>
+                      <TabsTrigger value="DROIT" className="text-sm font-medium">
+                        Droit des Affaires
                       </TabsTrigger>
                     </TabsList>
 
@@ -90,6 +93,13 @@ export default function Home() {
                     <TabsContent value="TC4" className="mt-6">
                       <AudioPlayer
                         course={COURSES.TC4}
+                        onThresholdReached={handleThresholdReached}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="DROIT" className="mt-6">
+                      <AudioPlayer
+                        course={COURSES.DROIT}
                         onThresholdReached={handleThresholdReached}
                       />
                     </TabsContent>

@@ -18,5 +18,11 @@ export const COURSES: Record<string, Course> = {
     title: 'Cours: Poteaux en Béton Armé',
     audioUrl: 'https://res.cloudinary.com/dysfocdyw/video/upload/v1759435118/Poteaux_en_B%C3%A9ton_Arm%C3%A9___D%C3%A9cryptage_Ultime_de_l_Eurocode_2_et_du_jcfgcs.mp4',
     duration: 15 * 60 + 32 // 15 minutes 32 secondes
+  },
+  DROIT: {
+    id: 'DROIT',
+    title: 'Droit des Affaires L2 Semestre 2 - Campus 1',
+    audioUrl: 'https://res.cloudinary.com/dysfocdyw/video/upload/v1759662777/Entreprise_en_France_Qui_Fait_Quoi_Statuts_Juridiques_et_Protec_svvqiz.mp4',
+    duration: 25 * 60 // Estimation de 25 minutes, à ajuster si nécessaire
   }
 };
