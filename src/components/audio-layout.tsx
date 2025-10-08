@@ -1,23 +1,24 @@
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { ReactNode } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import { ReactNode } from "react";
+import { useAudio } from "@/context/AudioContext";
 
 type AudioLayoutProps = {
   audioPlayer: ReactNode;
   feedbackForm: ReactNode;
   showFeedback: boolean;
-  currentTime: number;
-  totalDuration: number;
 };
 
-export default function AudioLayout({ 
-  audioPlayer, 
-  feedbackForm, 
+export default function AudioLayout({
+  audioPlayer,
+  feedbackForm,
   showFeedback,
-  currentTime,
-  totalDuration
 }: AudioLayoutProps) {
+  // Récupérer les informations d'état audio depuis le contexte
+  const { currentTime, duration, cumulativeListeningTime, formatTime } =
+    useAudio();
+
   return (
     <div className="space-y-6">
       <AnimatePresence mode="wait">

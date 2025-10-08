@@ -1,182 +1,128 @@
-'use client';
+"use client";
 
-import { useRef, useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Gauge, SkipBack, SkipForward } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Course } from '@/lib/courses';
-
-const FEEDBACK_THRESHOLD_SECONDS = 30; // Déclencher après 30 secondes
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Gauge,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Course } from "@/lib/courses";
+import { useAudio } from "@/context/AudioContext";
+import { useEffect } from "react";
 
 type AudioPlayerProps = {
   course: Course;
-  onThresholdReached: () => void;
   isCompact?: boolean; // Pour le mode compact après déclenchement
-  onTimeUpdate?: (currentTime: number, duration: number) => void; // Callback pour mettre à jour le temps
+  onThresholdReachedAction?: () => void; // Renommé pour indiquer qu'il s'agit d'une action côté serveur
 };
 
-export default function AudioPlayer({ course, onThresholdReached, isCompact = false, onTimeUpdate }: AudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [playbackRate, setPlaybackRate] = useState(1);
-  const [hasEnded, setHasEnded] = useState(false);
-  const thresholdReachedRef = useRef(false);
+export default function AudioPlayer({
+  course,
+  isCompact = false,
+  onThresholdReachedAction,
+}: AudioPlayerProps) {
+  const {
+    isPlaying,
+    currentTime,
+    duration,
+    progress,
+    playbackRate,
+    currentCourse,
+    isThresholdReached,
+    requiredListeningTime,
+    cumulativeListeningTime,
 
+    setCurrentCourse,
+    togglePlayPause,
+    seekTo,
+    skipTime,
+    restart,
+    setPlaybackRate,
+    formatTime,
+  } = useAudio();
+
+  // Mettre à jour le cours si nécessaire
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const setAudioData = () => {
-      setDuration(audio.duration);
-      if (audio.readyState >= 1) { // HAVE_METADATA
-         setIsPlaying(!audio.paused);
-         // Auto-play seulement si l'audio n'a pas encore commencé
-         if (audio.currentTime === 0) {
-           audio.play().catch(console.error);
-           setIsPlaying(true);
-         }
-      }
-    };
-    
-    const setAudioTime = () => {
-      const newProgress = (audio.currentTime / audio.duration) * 100;
-      setProgress(newProgress);
-      setCurrentTime(audio.currentTime);
-
-      // Mettre à jour le temps dans le composant parent
-      onTimeUpdate?.(audio.currentTime, audio.duration);
-
-      // Déclencher après 30 secondes de lecture
-      if (audio.currentTime >= FEEDBACK_THRESHOLD_SECONDS && !thresholdReachedRef.current) {
-        onThresholdReached();
-        thresholdReachedRef.current = true;
-      }
-    };
-
-    const handleEnded = () => {
-      setIsPlaying(false);
-      setHasEnded(true);
+    if (!currentCourse || currentCourse.id !== course.id) {
+      setCurrentCourse(course);
     }
+  }, [course, currentCourse, setCurrentCourse]);
 
-    audio.addEventListener('loadedmetadata', setAudioData);
-    audio.addEventListener('timeupdate', setAudioTime);
-    audio.addEventListener('play', () => setIsPlaying(true));
-    audio.addEventListener('pause', () => setIsPlaying(false));
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('loadedmetadata', setAudioData);
-      audio.removeEventListener('timeupdate', setAudioTime);
-      audio.removeEventListener('play', () => setIsPlaying(true));
-      audio.removeEventListener('pause', () => setIsPlaying(false));
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [onThresholdReached]);
-
-  const togglePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-        setHasEnded(false);
-      }
-      setIsPlaying(!isPlaying);
+  // Surveiller si le seuil est atteint pour afficher le formulaire
+  useEffect(() => {
+    if (isThresholdReached && !isCompact && onThresholdReachedAction) {
+      console.log("AudioPlayer: Seuil atteint, déclenchement du formulaire");
+      onThresholdReachedAction();
     }
-  };
+  }, [isThresholdReached, isCompact, onThresholdReachedAction]);
 
-  const handlePlaybackRateChange = (rate: string) => {
-    const newRate = parseFloat(rate);
-    setPlaybackRate(newRate);
-    if (audioRef.current) {
-      audioRef.current.playbackRate = newRate;
-    }
-  };
-
-  const restartAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      setProgress(0);
-      setCurrentTime(0);
-      setHasEnded(false);
-      thresholdReachedRef.current = false;
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
-  const skipTime = (seconds: number) => {
-    if (audioRef.current) {
-      const newTime = Math.max(0, Math.min(audioRef.current.currentTime + seconds, audioRef.current.duration));
-      audioRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
-      setProgress((newTime / audioRef.current.duration) * 100);
-    }
-  };
-
+  // Gestion du clic sur la barre de progression
   const handleProgressClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (audioRef.current && duration > 0) {
+    if (duration > 0) {
       const rect = event.currentTarget.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
       const percentage = clickX / rect.width;
       const newTime = percentage * duration;
-
-      audioRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
-      setProgress(percentage * 100);
+      seekTo(newTime);
     }
   };
 
-  const formatTime = (timeInSeconds: number) => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = Math.floor(timeInSeconds % 60);
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  };
-
-  const getRequiredListeningTime = () => {
-    const requiredSeconds = FEEDBACK_THRESHOLD_SECONDS; // 30 secondes fixes
-    const requiredMinutes = Math.floor(requiredSeconds / 60);
-    const totalMinutes = Math.floor(duration / 60);
-
-    return {
-      required: requiredMinutes,
-      total: totalMinutes,
-      requiredFormatted: formatTime(requiredSeconds),
-      totalFormatted: formatTime(duration)
-    };
+  // Gestion du changement de vitesse
+  const handlePlaybackRateChange = (rate: string) => {
+    setPlaybackRate(parseFloat(rate));
   };
 
   return (
-    <div className={`space-y-4 ${isCompact ? 'space-y-2' : ''}`} onContextMenu={(e) => e.preventDefault()}>
+    <div
+      className={`space-y-4 ${isCompact ? "space-y-2" : ""}`}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       {!isCompact && (
         <div className="text-center">
-          <h3 className="font-headline text-xl font-semibold">{course.title}</h3>
+          <h3 className="font-headline text-xl font-semibold">
+            {course.title}
+          </h3>
           {duration > 0 && (
             <p className="text-sm text-muted-foreground mt-2">
-              Écoutez <strong>30 secondes</strong> pour donner votre avis
+              Le formulaire d'avis apparaîtra après <strong>30 secondes</strong>{" "}
+              d'écoute
               <br />
-              <span className="text-xs">Durée totale : <strong>{getRequiredListeningTime().totalFormatted}</strong></span>
+              <span className="text-xs">
+                Durée totale : <strong>{formatTime(duration)}</strong>
+              </span>
             </p>
           )}
         </div>
       )}
+
       {isCompact && (
         <div className="text-center">
           <h4 className="font-semibold text-lg">{course.title}</h4>
-          <p className="text-sm text-muted-foreground">En cours de lecture...</p>
+          <p className="text-sm text-muted-foreground">
+            En cours de lecture...
+          </p>
         </div>
       )}
-      <audio ref={audioRef} src={course.audioUrl} controls={false} controlsList="nodownload" preload="metadata" />
 
       {/* Contrôles de vitesse */}
       <div className="flex items-center justify-center gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Gauge className="h-4 w-4 text-muted-foreground" />
-          <Select value={playbackRate.toString()} onValueChange={handlePlaybackRateChange}>
+          <Select
+            value={playbackRate.toString()}
+            onValueChange={handlePlaybackRateChange}
+          >
             <SelectTrigger className="w-20 h-8">
               <SelectValue />
             </SelectTrigger>
@@ -190,9 +136,9 @@ export default function AudioPlayer({ course, onThresholdReached, isCompact = fa
             </SelectContent>
           </Select>
         </div>
-        {hasEnded && (
+        {!isPlaying && currentTime > 0 && (
           <Button
-            onClick={restartAudio}
+            onClick={restart}
             variant="outline"
             size="sm"
             className="flex items-center gap-2 bg-secondary/50 hover:bg-secondary/70"
@@ -226,8 +172,17 @@ export default function AudioPlayer({ course, onThresholdReached, isCompact = fa
       </div>
 
       <div className="flex items-center gap-4">
-        <Button onClick={togglePlayPause} variant="outline" size="icon" className="flex-shrink-0 bg-primary/10 hover:bg-primary/20">
-          {isPlaying ? <Pause className="h-5 w-5 text-primary" /> : <Play className="h-5 w-5 text-primary" />}
+        <Button
+          onClick={togglePlayPause}
+          variant="outline"
+          size="icon"
+          className="flex-shrink-0 bg-primary/10 hover:bg-primary/20"
+        >
+          {isPlaying ? (
+            <Pause className="h-5 w-5 text-primary" />
+          ) : (
+            <Play className="h-5 w-5 text-primary" />
+          )}
         </Button>
         <div className="w-full">
           {/* Barre de progression interactive */}
