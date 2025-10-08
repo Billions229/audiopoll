@@ -7,14 +7,16 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Course } from '@/lib/courses';
 
-const FEEDBACK_THRESHOLD = 0.25; // Changé de 0.95 à 0.25 (25%)
+const FEEDBACK_THRESHOLD_SECONDS = 30; // Déclencher après 30 secondes
 
 type AudioPlayerProps = {
   course: Course;
   onThresholdReached: () => void;
+  isCompact?: boolean; // Pour le mode compact après déclenchement
+  onTimeUpdate?: (currentTime: number, duration: number) => void; // Callback pour mettre à jour le temps
 };
 
-export default function AudioPlayer({ course, onThresholdReached }: AudioPlayerProps) {
+export default function AudioPlayer({ course, onThresholdReached, isCompact = false, onTimeUpdate }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -32,6 +34,11 @@ export default function AudioPlayer({ course, onThresholdReached }: AudioPlayerP
       setDuration(audio.duration);
       if (audio.readyState >= 1) { // HAVE_METADATA
          setIsPlaying(!audio.paused);
+         // Auto-play seulement si l'audio n'a pas encore commencé
+         if (audio.currentTime === 0) {
+           audio.play().catch(console.error);
+           setIsPlaying(true);
+         }
       }
     };
     
@@ -40,7 +47,11 @@ export default function AudioPlayer({ course, onThresholdReached }: AudioPlayerP
       setProgress(newProgress);
       setCurrentTime(audio.currentTime);
 
-      if (newProgress >= FEEDBACK_THRESHOLD * 100 && !thresholdReachedRef.current) {
+      // Mettre à jour le temps dans le composant parent
+      onTimeUpdate?.(audio.currentTime, audio.duration);
+
+      // Déclencher après 30 secondes de lecture
+      if (audio.currentTime >= FEEDBACK_THRESHOLD_SECONDS && !thresholdReachedRef.current) {
         onThresholdReached();
         thresholdReachedRef.current = true;
       }
@@ -127,7 +138,7 @@ export default function AudioPlayer({ course, onThresholdReached }: AudioPlayerP
   };
 
   const getRequiredListeningTime = () => {
-    const requiredSeconds = Math.floor(duration * FEEDBACK_THRESHOLD);
+    const requiredSeconds = FEEDBACK_THRESHOLD_SECONDS; // 30 secondes fixes
     const requiredMinutes = Math.floor(requiredSeconds / 60);
     const totalMinutes = Math.floor(duration / 60);
 
@@ -140,16 +151,25 @@ export default function AudioPlayer({ course, onThresholdReached }: AudioPlayerP
   };
 
   return (
-    <div className="space-y-4" onContextMenu={(e) => e.preventDefault()}>
-      <div className="text-center">
-        <h3 className="font-headline text-xl font-semibold">{course.title}</h3>
-        {duration > 0 && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Écoutez <strong>{getRequiredListeningTime().requiredFormatted}</strong> sur{' '}
-            <strong>{getRequiredListeningTime().totalFormatted}</strong> pour donner votre avis
-          </p>
-        )}
-      </div>
+    <div className={`space-y-4 ${isCompact ? 'space-y-2' : ''}`} onContextMenu={(e) => e.preventDefault()}>
+      {!isCompact && (
+        <div className="text-center">
+          <h3 className="font-headline text-xl font-semibold">{course.title}</h3>
+          {duration > 0 && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Écoutez <strong>30 secondes</strong> pour donner votre avis
+              <br />
+              <span className="text-xs">Durée totale : <strong>{getRequiredListeningTime().totalFormatted}</strong></span>
+            </p>
+          )}
+        </div>
+      )}
+      {isCompact && (
+        <div className="text-center">
+          <h4 className="font-semibold text-lg">{course.title}</h4>
+          <p className="text-sm text-muted-foreground">En cours de lecture...</p>
+        </div>
+      )}
       <audio ref={audioRef} src={course.audioUrl} controls={false} controlsList="nodownload" preload="metadata" />
 
       {/* Contrôles de vitesse */}

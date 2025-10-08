@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserInfoForm from '@/components/user-info-form';
+import CourseSelection from '@/components/course-selection';
 import AudioPlayer from '@/components/audio-player';
 import FeedbackForm from '@/components/feedback-form';
+
+import AudioLayout from '@/components/audio-layout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export type UserInfo = {
   nom: string;
@@ -16,22 +18,47 @@ export type UserInfo = {
 
 import { COURSES, type Course } from '@/lib/courses';
 
+// États du flux utilisateur
+type FlowState =
+  | 'user-info'           // Collecte des informations utilisateur
+  | 'course-selection'    // Sélection du premier cours
+  | 'audio-playing'       // Lecture audio (avant 30s)
+  | 'feedback-active';    // Formulaire de feedback actif (après 30s)
+
 export default function Home() {
+  const [flowState, setFlowState] = useState<FlowState>('user-info');
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
+
   const [showFeedback, setShowFeedback] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<string>('TC4'); // Par défaut TC4
+  const [currentTime, setCurrentTime] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
 
   const handleUserInfoSubmit = (data: UserInfo) => {
     setUserInfo(data);
+    setFlowState('course-selection');
+  };
+
+  const handleCourseSelect = (course: Course) => {
+    setCurrentCourse(course);
+    setShowFeedback(false);
+    setCurrentTime(0);
+    setTotalDuration(course.duration);
+    setFlowState('audio-playing');
   };
 
   const handleThresholdReached = () => {
     setShowFeedback(true);
+    setFlowState('feedback-active');
   };
 
-  const handleCourseChange = (courseId: string) => {
-    setSelectedCourse(courseId);
-    setShowFeedback(false); // Reset feedback when changing course
+
+
+
+
+  const handleTimeUpdate = (currentTime: number, duration: number) => {
+    setCurrentTime(currentTime);
+    setTotalDuration(duration);
   };
 
   return (
@@ -46,78 +73,73 @@ export default function Home() {
             />
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl">AudioPoll</h1>
           </div>
-          <p className="mt-2 text-muted-foreground">Découvrez une nouvelle façon de réviser vos cours à l'approche des devoirs : testez et donnez-nous vos retours</p>
+          <p className="mt-2 text-muted-foreground">
+            Découvrez une nouvelle façon de réviser vos cours à l'approche des devoirs : testez et donnez-nous vos retours
+          </p>
         </header>
         <Card className="w-full overflow-hidden shadow-2xl ring-1 ring-black/5">
           <CardContent className="p-6 sm:p-8">
             <AnimatePresence mode="wait">
-              {!userInfo ? (
+              {/* Étape 1: Collecte des informations utilisateur */}
+              {flowState === 'user-info' && (
                 <motion.div
-                  key="user-info-form"
+                  key="user-info"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.5 }}
                 >
                   <UserInfoForm onSubmit={handleUserInfoSubmit} />
                 </motion.div>
-              ) : (
+              )}
+
+              {/* Étape 2: Sélection du premier cours */}
+              {flowState === 'course-selection' && (
                 <motion.div
-                  key="audio-section"
+                  key="course-selection"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-8"
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  {/* Onglets de sélection de cours */}
-                  <Tabs value={selectedCourse} onValueChange={handleCourseChange} className="w-full">
-                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 h-auto p-1">
-                      <TabsTrigger value="TC3" className="text-xs sm:text-sm font-medium py-2 px-2 sm:px-3">
-                        TC3 - EUROCODE
-                      </TabsTrigger>
-                      <TabsTrigger value="TC4" className="text-xs sm:text-sm font-medium py-2 px-2 sm:px-3">
-                        TC4 - Poteaux Béton
-                      </TabsTrigger>
-                      <TabsTrigger value="DROIT" className="text-xs sm:text-sm font-medium py-2 px-2 sm:px-3">
-                        Droit des Affaires
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="TC3" className="mt-6">
-                      <AudioPlayer
-                        course={COURSES.TC3}
-                        onThresholdReached={handleThresholdReached}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="TC4" className="mt-6">
-                      <AudioPlayer
-                        course={COURSES.TC4}
-                        onThresholdReached={handleThresholdReached}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="DROIT" className="mt-6">
-                      <AudioPlayer
-                        course={COURSES.DROIT}
-                        onThresholdReached={handleThresholdReached}
-                      />
-                    </TabsContent>
-                  </Tabs>
-
-                  <AnimatePresence>
-                    {showFeedback && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
-                      >
-                        <FeedbackForm userInfo={userInfo} selectedCourse={COURSES[selectedCourse]} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <CourseSelection onCourseSelect={handleCourseSelect} />
                 </motion.div>
               )}
+
+              {/* Étapes 3 & 4: Lecture audio et feedback */}
+              {(flowState === 'audio-playing' || flowState === 'feedback-active') && currentCourse && userInfo && (
+                <motion.div
+                  key="audio-feedback"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <AudioLayout
+                    audioPlayer={
+                      <AudioPlayer
+                        course={currentCourse}
+                        onThresholdReached={handleThresholdReached}
+                        isCompact={showFeedback}
+                        onTimeUpdate={handleTimeUpdate}
+                      />
+                    }
+                    feedbackForm={
+                      <FeedbackForm
+                        userInfo={userInfo}
+                        selectedCourse={currentCourse}
+                        currentTime={currentTime}
+                        totalDuration={totalDuration}
+                      />
+                    }
+                    showFeedback={showFeedback}
+                    currentTime={currentTime}
+                    totalDuration={totalDuration}
+                  />
+                </motion.div>
+              )}
+
+
             </AnimatePresence>
           </CardContent>
         </Card>
