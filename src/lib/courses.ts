@@ -8,6 +8,13 @@ export type Course = {
 };
 
 export const COURSES: Record<string, Course> = {
+  TC2: {
+    id: 'TC2',
+    title: 'Cours: Thermodynamique et de l\'anthropie',
+    audioUrl: 'https://res.cloudinary.com/dysfocdyw/video/upload/v1760100565/Entropie_et_Fl%C3%A8che_du_Temps__D%C3%A9cryptage_du_Second_Principe_de_l_uteurh.mp4',
+    duration: 14 * 60 + 53, // 14 minutes 53 secondes
+    category: 'Génie Civil'
+  },
   TC3: {
     id: 'TC3',
     title: 'Cours: EUROCODE',
