@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import StarRating from "./star-rating";
 import { Separator } from "./ui/separator";
@@ -25,10 +24,6 @@ import { useAudio } from "@/context/AudioContext";
 const formSchema = z.object({
   rating: z.number().min(1, "Veuillez attribuer une note."),
   comments: z.string().min(1, "Veuillez laisser un commentaire."),
-  willingToPay: z.enum(["oui", "non", "peut-etre"], {
-    required_error: "Veuillez sélectionner une option.",
-  }),
-  amount: z.string().optional(),
 });
 
 type FeedbackFormProps = {
@@ -54,12 +49,10 @@ export default function FeedbackForm({
     defaultValues: {
       rating: 0,
       comments: "",
-      amount: "", // Initialiser avec une chaîne vide pour éviter l'erreur controlled/uncontrolled
     },
   });
 
   const { isSubmitting } = form.formState;
-  const watchWillingToPay = form.watch("willingToPay");
   const [redirectUrl, setRedirectUrl] = useState("");
 
   // Vérifier si l'utilisateur a écouté suffisamment longtemps (1/4 de la durée)
@@ -93,8 +86,6 @@ export default function FeedbackForm({
       titre_cours: selectedCourse.title,
       note_satisfaction: data.rating.toString(),
       commentaires: data.comments || "",
-      disposition_a_payer: data.willingToPay,
-      montant_acceptable: data.amount || "",
       temps_ecoute: formatTime(cumulativeTime),
       duree_totale: formatTime(totalDuration),
     };
@@ -179,70 +170,6 @@ export default function FeedbackForm({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="willingToPay"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>
-                  Seriez-vous prêt(e) à payer pour accéder à d'autres cours
-                  similaires ?
-                </FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-col space-y-1"
-                  >
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="oui" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Oui</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="non" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Non</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="peut-etre" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Peut-être</FormLabel>
-                    </FormItem>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {(watchWillingToPay === "oui" ||
-            watchWillingToPay === "peut-etre") && (
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Si oui ou peut-être, quel montant (en €) vous semblerait
-                    acceptable par cours ?
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="text"
-                      placeholder="ex: 4"
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
 
           <Button
             type="submit"
